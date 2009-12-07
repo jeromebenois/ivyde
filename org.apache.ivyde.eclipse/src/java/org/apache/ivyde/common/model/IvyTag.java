@@ -27,9 +27,10 @@ import java.util.ResourceBundle;
 import java.util.Set;
 
 public class IvyTag {
-    private static final ResourceBundle DOC_RESOURCE = ResourceBundle.getBundle(
-        IvyTag.class.getPackage().getName() + ".tagsdoc");
-    
+    private static final ResourceBundle DOC_RESOURCE = ResourceBundle.getBundle(IvyTag.class
+            .getPackage().getName()
+            + ".tagsdoc");
+
     private IvyTag parent;
 
     private String name;
@@ -170,6 +171,20 @@ public class IvyTag {
             }
         } else {
             System.out.println("No provider set for:" + att);
+        }
+        return null;
+    }
+
+    public String getPossibleDocForValue(String value, IvyFile ivyfile) {
+        IvyTagAttribute ivyTagAttribute = (IvyTagAttribute) attributes.get(ivyfile.getAttributeName());
+        if (ivyTagAttribute == null) {
+            return null;
+        }
+        IValueProvider provider = ivyTagAttribute.getValueProvider();
+        if (provider != null && (provider instanceof IDocumentedValueProvider)) {
+            IDocumentedValueProvider documentedValueProvider = (IDocumentedValueProvider) provider;
+            String doc = documentedValueProvider.getDocForValue(value, ivyfile);
+            return doc;
         }
         return null;
     }

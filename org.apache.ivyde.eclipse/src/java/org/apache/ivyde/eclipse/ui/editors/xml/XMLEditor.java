@@ -17,6 +17,7 @@
  */
 package org.apache.ivyde.eclipse.ui.editors.xml;
 
+import org.apache.ivyde.common.model.IvyModel;
 import org.apache.ivyde.eclipse.IvyPlugin;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.jface.action.IAction;
@@ -67,4 +68,5 @@ public class XMLEditor extends TextEditor {
     public void setFile(IFile file) {
         configuration.setFile(file);
     }
+
 }

@@ -127,16 +127,22 @@ public class IvyCodeCompletionProcessor {
         }
         IvyTag ivyTag = model.getIvyTag(tag, parent);
         if (ivyTag != null) {
-            String[] values = ivyTag.getPossibleValuesForAttribute(ivyfile.getAttributeName(),
-                ivyfile);
+            String[] values = ivyTag.getPossibleValuesForAttribute(ivyfile.getAttributeName(), ivyfile);
             if (values != null) {
                 String qualifier = ivyfile.getAttributeValueQualifier();
                 int qlen = qualifier == null ? 0 : qualifier.length();
                 Arrays.sort(values);
                 for (int i = 0; i < values.length; i++) {
                     String val = values[i];
-                    CodeCompletionProposal proposal = new CodeCompletionProposal(
+                    CodeCompletionProposal proposal = null;
+                    String doc = ivyTag.getPossibleDocForValue(val, ivyfile);
+                    if(doc==null){
+                        proposal = new CodeCompletionProposal(
                         val, ivyfile.getOffset() - qlen, qlen + caretOffset, val.length());
+                    }else{
+                        proposal = new CodeCompletionProposal(
+                            val, ivyfile.getOffset() - qlen, qlen + caretOffset, val.length(), val, doc);
+                    }
                     propList.add(proposal);
                 }
             }

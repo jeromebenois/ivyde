@@ -25,6 +25,8 @@ import org.apache.ivy.util.MessageLogger;
 import org.apache.ivy.util.MessageLoggerHelper;
 import org.apache.ivyde.eclipse.IvyPlugin;
 import org.eclipse.jface.preference.PreferenceConverter;
+import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Display;
@@ -54,18 +56,22 @@ public class IvyConsole extends MessageConsole implements MessageLogger {
     private MessageConsoleStream[] streams = new MessageConsoleStream[5];
     // CheckStyle:MagicNumber| ON
 
-    private ConsoleDocument document;
+    protected ConsoleDocument document;
 
     private boolean initialized = false;
 
-    private boolean visible = false;
+    protected boolean visible = false;
 
     private boolean showOnMessage;
 
     private IConsoleManager consoleManager;
 
     public IvyConsole() {
-        super("Ivy", IvyPlugin.getImageDescriptor("icons/logo16x16.gif")); //$NON-NLS-1$
+       this("Ivy", IvyPlugin.getImageDescriptor("icons/logo16x16.gif")); //$NON-NLS-1$
+    }
+
+    public IvyConsole(String name, ImageDescriptor imageDescriptor) {
+        super(name, imageDescriptor); 
         consoleManager = ConsolePlugin.getDefault().getConsoleManager();
         document = new ConsoleDocument();
         Message.setDefaultLogger(this);
@@ -84,7 +90,7 @@ public class IvyConsole extends MessageConsole implements MessageLogger {
     }
 
     public void rawlog(String msg, int level) {
-        appendLine(level, msg);
+        appendLine(level, msg);        
     }
 
     /**
@@ -178,7 +184,7 @@ public class IvyConsole extends MessageConsole implements MessageLogger {
         }
     }
 
-    private void showConsole() {
+    protected void showConsole() {
         show(false);
     }
 

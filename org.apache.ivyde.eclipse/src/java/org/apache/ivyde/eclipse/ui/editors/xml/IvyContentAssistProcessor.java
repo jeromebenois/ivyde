@@ -47,6 +47,8 @@ public abstract class IvyContentAssistProcessor implements IContentAssistProcess
 
     private IvyCodeCompletionProcessor completionProcessor;
 
+    private IvyModel model;
+    
     /**
      * Call by viewer to retrieve a list of ICompletionProposal
      */
@@ -113,9 +115,10 @@ public abstract class IvyContentAssistProcessor implements IContentAssistProcess
 
     public void setFile(IFile file) {
         this.file = file;
-        completionProcessor = new IvyCodeCompletionProcessor(newCompletionModel(file));
+        this.model = newCompletionModel(file);
+        completionProcessor = new IvyCodeCompletionProcessor(model);
     }
 
     protected abstract IvyModel newCompletionModel(IFile file);
-
+    
 }

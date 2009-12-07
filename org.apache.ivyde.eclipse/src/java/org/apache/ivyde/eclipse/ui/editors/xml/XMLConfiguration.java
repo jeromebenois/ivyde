@@ -49,7 +49,7 @@ public class XMLConfiguration extends SourceViewerConfiguration {
     private IvyContentAssistProcessor processor;
 
     private IFile file;
-
+ 
     public XMLConfiguration(ColorManager colorManager, IvyContentAssistProcessor processor) {
         this.colorManager = colorManager;
         this.processor = processor;
@@ -108,11 +108,11 @@ public class XMLConfiguration extends SourceViewerConfiguration {
     public IContentAssistant getContentAssistant(ISourceViewer sourceViewer) {
         // Create content assistant
         ContentAssistant assistant = new ContentAssistant();
-
+        
         // required to display additional info
         assistant.setInformationControlCreator(new IInformationControlCreator() {
             public IInformationControl createInformationControl(Shell parent) {
-                return new DefaultInformationControl(parent);
+                return new DefaultInformationControl(parent, true);
             }
         });
 
@@ -121,7 +121,7 @@ public class XMLConfiguration extends SourceViewerConfiguration {
         assistant.setContentAssistProcessor(processor, XMLPartitionScanner.XML_TAG);
         assistant.setContentAssistProcessor(processor, XMLPartitionScanner.XML_DEFAULT);
         assistant.setContentAssistProcessor(processor, IDocument.DEFAULT_CONTENT_TYPE);
-
+        
         // Return the content assistant
         return assistant;
     }
@@ -132,4 +132,6 @@ public class XMLConfiguration extends SourceViewerConfiguration {
         }
         this.file = file;
     }
+    
+
 }

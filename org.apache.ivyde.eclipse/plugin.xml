@@ -19,6 +19,9 @@
    under the License.    
 -->
 <plugin>
+   <extension-point id="moduleDescriptorExtension" name="org.apache.ivyde.module.descriptor.extension" schema="schema/moduleDescriptorExtension.exsd"/>
+   <extension-point id="editorPage" name="org.apache.ivyde.editorPage" schema="schema/editorPage.exsd"/>
+   
 	<extension point="org.eclipse.ui.console.consoleFactories">
 	  <consoleFactory 
 	     label="Ivy Console"
@@ -143,6 +146,7 @@
       <editor
             class="org.apache.ivyde.eclipse.ui.editors.IvyModuleDescriptorEditor"
             contributorClass="org.apache.ivyde.eclipse.ui.editors.IvyModuleDescriptorEditorContributor"
+            extensions="ivy"
             filenames="ivy.xml,ivy-dev.xml,ivy-snapshot.xml"
             icon="icons/logo16x16.gif"
             id="org.apache.ivyde.editors.IvyEditor"

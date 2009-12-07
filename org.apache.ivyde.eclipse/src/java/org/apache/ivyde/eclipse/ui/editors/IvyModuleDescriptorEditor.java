@@ -17,9 +17,19 @@
  */
 package org.apache.ivyde.eclipse.ui.editors;
 
+import java.util.HashSet;
+import java.util.Iterator;
+
 import org.apache.ivyde.common.ivyfile.IvyModuleDescriptorModel;
 import org.apache.ivyde.common.model.IvyModel;
+import org.apache.ivyde.common.model.IvyModelSettings;
 import org.apache.ivyde.eclipse.IvyPlugin;
+import org.apache.ivyde.eclipse.cpcontainer.IvyClasspathContainer;
+import org.apache.ivyde.eclipse.cpcontainer.IvyClasspathUtil;
+import org.apache.ivyde.eclipse.extension.IvyEditorPage;
+import org.apache.ivyde.eclipse.extension.IvyEditorPageDescriptor;
+import org.apache.ivyde.eclipse.extension.ModuleDescriptorExtension;
+import org.apache.ivyde.eclipse.extension.ModuleDescriptorExtensionDescriptor;
 import org.apache.ivyde.eclipse.ui.core.IvyFileEditorInput;
 import org.apache.ivyde.eclipse.ui.editors.pages.OverviewFormPage;
 import org.apache.ivyde.eclipse.ui.editors.xml.EclipseIvyModelSettings;
@@ -31,8 +41,13 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.IConfigurationElement;
+import org.eclipse.core.runtime.IExtension;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Platform;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
@@ -56,12 +71,17 @@ public class IvyModuleDescriptorEditor extends FormEditor implements IResourceCh
 
     private Browser browser;
 
+    private HashSet ivyEditorPageDescriptors = new HashSet();
+
+    private HashSet moduleDescriptorExtensionDescriptors = new HashSet();
+
     /**
      * Creates a multi-page editor example.
      */
     public IvyModuleDescriptorEditor() {
         super();
         ResourcesPlugin.getWorkspace().addResourceChangeListener(this);
+        loadExtensions();
     }
 
     protected void setInput(IEditorInput input) {
@@ -86,8 +106,9 @@ public class IvyModuleDescriptorEditor extends FormEditor implements IResourceCh
         try {
             xmlEditor = new XMLEditor(new IvyContentAssistProcessor() {
                 protected IvyModel newCompletionModel(IFile file) {
-                    return new IvyModuleDescriptorModel(new EclipseIvyModelSettings(
-                            file));
+//                    return new IvyModuleDescriptorModel(new EclipseIvyModelSettings(
+//                            file));
+                    return getIvyCompletionModel(new EclipseIvyModelSettings(getJavaProject()));
                 }
             });
             xmlEditor.setFile(((IvyFileEditorInput) getEditorInput()).getFile());
@@ -97,6 +118,22 @@ public class IvyModuleDescriptorEditor extends FormEditor implements IResourceCh
             ErrorDialog.openError(getSite().getShell(), "Error creating nested text editor", null,
                 e.getStatus());
         }
+    }
+
+    private IvyModel getIvyCompletionModel(IvyModelSettings ivyModelSettings) {
+        IvyModuleDescriptorModel ivyModuleDescriptorModel = new IvyModuleDescriptorModel(
+                ivyModelSettings);
+        if(ivyModuleDescriptorModel!=null){
+            Iterator iterator = moduleDescriptorExtensionDescriptors.iterator();
+            while (iterator.hasNext()) {
+                ModuleDescriptorExtensionDescriptor descriptor = (ModuleDescriptorExtensionDescriptor) iterator.next();
+                ModuleDescriptorExtension moduleDescriptorExtension = descriptor.createModuleDescriptorExtension();
+                if(moduleDescriptorExtension!=null){
+                    ivyModuleDescriptorModel = moduleDescriptorExtension.contributeModel(ivyModuleDescriptorModel);
+                }
+            }
+        }
+        return ivyModuleDescriptorModel;
     }
 
     void createPageOverView() {
@@ -133,6 +170,55 @@ public class IvyModuleDescriptorEditor extends FormEditor implements IResourceCh
         // createPageOverView();
         createPageXML();
         // createPagePreview();
+        addIvyEditorPageExtensions();
+    }
+
+    private void addIvyEditorPageExtensions() {
+        Iterator iterator = ivyEditorPageDescriptors.iterator();
+        while (iterator.hasNext()) {
+            IvyEditorPageDescriptor ivyEditorPageDescriptor = (IvyEditorPageDescriptor) iterator
+                    .next();
+            IvyEditorPage page = ivyEditorPageDescriptor.createPage();
+            try {
+                page.initialize(this);
+                int pageIndex = addPage(page);
+                setPageText(pageIndex, page.getPageName());
+            } catch (PartInitException e) {
+                IvyPlugin.log(IStatus.ERROR, "Cannot add Ivy editor extension", e);
+            }
+        }
+
+    }
+
+    private void loadExtensions() {
+        parseModuleDescriptorExtensionMetadatas();
+        parseEditorPageExtensionMetadatas();
+    }
+
+    private void parseModuleDescriptorExtensionMetadatas() {
+        final IExtension[] extensions = Platform.getExtensionRegistry().getExtensionPoint(
+            ModuleDescriptorExtension.EXTENSION_POINT).getExtensions();
+        for (int i = 0; i < extensions.length; i++) {
+            final IConfigurationElement[] configElements = extensions[i].getConfigurationElements();
+            for (int j = 0; j < configElements.length; j++) {
+                final ModuleDescriptorExtensionDescriptor descriptor = new ModuleDescriptorExtensionDescriptor(
+                        configElements[j]);
+                moduleDescriptorExtensionDescriptors.add(descriptor);
+            }
+        }
+    }
+
+    private void parseEditorPageExtensionMetadatas() {
+        final IExtension[] extensions = Platform.getExtensionRegistry().getExtensionPoint(
+            IvyEditorPage.EXTENSION_POINT).getExtensions();
+        for (int i = 0; i < extensions.length; i++) {
+            final IConfigurationElement[] configElements = extensions[i].getConfigurationElements();
+            for (int j = 0; j < configElements.length; j++) {
+                final IvyEditorPageDescriptor descriptor = new IvyEditorPageDescriptor(
+                        configElements[j]);
+                ivyEditorPageDescriptors.add(descriptor);
+            }
+        }
     }
 
     /**
@@ -186,7 +272,7 @@ public class IvyModuleDescriptorEditor extends FormEditor implements IResourceCh
      */
     protected void pageChange(int newPageIndex) {
         super.pageChange(newPageIndex);
-        if (newPageIndex == 1) {
+        if (newPageIndex == 1 && browser != null) {
             browser.refresh();
         }
     }
